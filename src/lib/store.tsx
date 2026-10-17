@@ -27,6 +27,8 @@ export interface AppState {
   unlocked: { blood: boolean; dna: boolean };
   consent?: { at: string; version: string };
   history: Assessment[];
+  /** Set on log out. The profile and its data stay so the same email can log back in. */
+  signedOut?: boolean;
 }
 
 const KEY = "iage.demo.v1";
@@ -53,7 +55,10 @@ export function ctxOf(p: Profile): Ctx {
 interface StoreApi {
   state: AppState;
   ready: boolean;
+  signedIn: boolean;
   setProfile: (p: Profile) => void;
+  signIn: () => void;
+  signOut: () => void;
   saveData: (tier: Tier, values: Record<string, number>) => void;
   unlock: (t: "blood" | "dna") => void;
   giveConsent: () => void;
@@ -92,7 +97,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state, ready]);
 
-  const setProfile = useCallback((profile: Profile) => setState((s) => ({ ...s, profile })), []);
+  // One account per browser: a different email starts from empty data so it never inherits the last user's results.
+  const setProfile = useCallback(
+    (profile: Profile) =>
+      setState((s) => {
+        const same = s.profile?.email.toLowerCase() === profile.email.toLowerCase();
+        return { ...(same || !s.profile ? s : EMPTY), profile, signedOut: false };
+      }),
+    [],
+  );
+  const signIn = useCallback(() => setState((s) => ({ ...s, signedOut: false })), []);
+  const signOut = useCallback(() => setState((s) => ({ ...s, signedOut: true })), []);
   const saveData = useCallback(
     (tier: Tier, values: Record<string, number>) => setState((s) => ({ ...s, data: { ...s.data, [tier]: values } })),
     [],
@@ -116,10 +131,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const api = useMemo<StoreApi>(() => {
     const latest = state.history[state.history.length - 1];
     return {
-      state, ready, setProfile, saveData, unlock, giveConsent, withdrawConsent, addAssessment, reset, latest,
+      state, ready, signedIn: !!state.profile && !state.signedOut,
+      setProfile, signIn, signOut, saveData, unlock, giveConsent, withdrawConsent, addAssessment, reset, latest,
       phaseDone: (n) => state.history.some((h) => h.phase === n),
     };
-  }, [state, ready, setProfile, saveData, unlock, giveConsent, withdrawConsent, addAssessment, reset]);
+  }, [state, ready, setProfile, signIn, signOut, saveData, unlock, giveConsent, withdrawConsent, addAssessment, reset]);
 
   return <Ctx_.Provider value={api}>{children}</Ctx_.Provider>;
 }

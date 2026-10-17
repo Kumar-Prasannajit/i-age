@@ -8,21 +8,24 @@ import { PERSONAS } from "@/lib/personas";
 export function SignupClient() {
   const router = useRouter();
   const params = useSearchParams();
-  const { state, ready, setProfile } = useStore();
+  const { state, ready, signedIn, setProfile, signIn } = useStore();
   const [mode, setMode] = useState<"signup" | "login">(params.get("mode") === "login" ? "login" : "signup");
   const [f, setF] = useState({ name: "", email: "", password: "", dob: "", sex: "male", height: "", weight: "" });
   const [err, setErr] = useState("");
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
 
   useEffect(() => {
-    if (ready && state.profile && mode === "signup" && !f.name) router.replace("/dashboard/");
-  }, [ready, state.profile, mode, f.name, router]);
+    if (ready && signedIn && mode === "signup" && !f.name) router.replace("/dashboard/");
+  }, [ready, signedIn, mode, f.name, router]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setErr("");
     if (mode === "login") {
-      if (state.profile && state.profile.email.toLowerCase() === f.email.trim().toLowerCase()) return router.push("/dashboard/");
+      if (state.profile && state.profile.email.toLowerCase() === f.email.trim().toLowerCase()) {
+        signIn();
+        return router.push("/dashboard/");
+      }
       return setErr("We don't have an account for that email in this demo. Sign up, or try a sample profile below.");
     }
     const h = Number(f.height), w = Number(f.weight);

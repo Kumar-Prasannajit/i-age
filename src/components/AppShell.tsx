@@ -14,15 +14,15 @@ const TABS = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { state, ready } = useStore();
+  const { state, ready, signedIn } = useStore();
   const router = useRouter();
   const path = usePathname() ?? "";
 
   useEffect(() => {
-    if (ready && !state.profile) router.replace("/signup/");
-  }, [ready, state.profile, router]);
+    if (ready && !signedIn) router.replace(state.profile ? "/signup/?mode=login" : "/signup/");
+  }, [ready, signedIn, state.profile, router]);
 
-  if (!ready || !state.profile) {
+  if (!ready || !signedIn || !state.profile) {
     return <div className="container" style={{ paddingTop: 96 }}><p className="muted">Loading…</p></div>;
   }
   const initials = state.profile.name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();

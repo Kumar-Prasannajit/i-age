@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { ageFromDob, useStore } from "@/lib/store";
 
 function Profile() {
-  const { state, withdrawConsent, reset } = useStore();
+  const { state, withdrawConsent, reset, signOut } = useStore();
   const router = useRouter();
   const p = state.profile!;
   const exportData = () => {
@@ -24,6 +24,7 @@ function Profile() {
       <h1 style={{ fontSize: "clamp(28px,5vw,40px)" }}>Profile</h1>
       <section className="glass pad stack" style={{ gap: 12 }}>
         {rows.map(([k, v]) => <div key={k} className="row between"><span className="muted">{k}</span><b>{v}</b></div>)}
+        <div><button className="btn" onClick={() => { signOut(); router.replace("/signup/?mode=login"); }}>Log out</button></div>
       </section>
       <section className="glass pad stack">
         <h2 style={{ fontSize: 20 }}>Privacy and consent</h2>
